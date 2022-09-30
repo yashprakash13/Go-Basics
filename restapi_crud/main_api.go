@@ -31,6 +31,15 @@ func main() {
 		Article{Title: "Hello 1", Desc: "Desc 1", Content: "Content 1"},
 		Article{Title: "Hello 2", Desc: "Desc 2", Content: "Content 2"},
 	}
+
+	// slightly better way to write this
+	// with declaration: type Articles []Article
+	// we can have instead:
+	// articles := Articles{
+	// 	Article{Title: "Hello 1", Desc: "Desc 1", Content: "Content 1"},
+	// 	Article{Title: "Hello 2", Desc: "Desc 2", Content: "Content 2"},
+	// }
+
 	handleRequests()
 }
 
