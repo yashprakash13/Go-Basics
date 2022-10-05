@@ -24,20 +24,20 @@ func init() {
 func main() {
 	Token = os.Getenv("TOKEN")
 	// Create a new Discord session using the provided bot token.
-	dg, err := discordgo.New("Bot " + Token)
+	bot, err := discordgo.New("Bot " + Token)
 	if err != nil {
 		fmt.Println("Error creating Discord session,", err)
 		return
 	}
 
 	// Register the messageCreate func as a callback for MessageCreate events.
-	dg.AddHandler(messageCreate)
+	bot.AddHandler(messageCreate)
 
 	// In this example, we only care about receiving message events.
-	dg.Identify.Intents = discordgo.IntentsGuildMessages
+	bot.Identify.Intents = discordgo.IntentsGuildMessages
 
 	// Open a websocket connection to Discord and begin listening.
-	err = dg.Open()
+	err = bot.Open()
 	if err != nil {
 		fmt.Println("error opening connection,", err)
 		return
@@ -50,7 +50,7 @@ func main() {
 	<-sc
 
 	// Cleanly close down the Discord session.
-	dg.Close()
+	bot.Close()
 
 }
 
