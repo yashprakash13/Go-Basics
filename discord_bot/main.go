@@ -12,6 +12,7 @@ import (
 )
 
 var Token string
+var persistentMessageID string
 
 func init() {
 	// load env variables
@@ -68,8 +69,38 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		s.ChannelMessageSend(m.ChannelID, "Pong!")
 	}
 
-	// If the message is "pong" reply with "Ping!"
-	if m.Content == "pong" {
-		s.ChannelMessageSend(m.ChannelID, "Ping!")
+	if m.ChannelID == "1023789932772343868" {
+		if persistentMessageID == "" {
+			// read the last message id from the file and then delete it
+			data, err_readfile := os.ReadFile("lastTextSentDetails.txt")
+			if err_readfile != nil {
+				fmt.Println("Error in reading file: ", err_readfile)
+			} else {
+				persistentMessageID = string(data)
+			}
+		}
+		// delete the last message
+		err := s.ChannelMessageDelete("1023789932772343868", persistentMessageID)
+		if err != nil {
+			fmt.Println("Erorr in deleting the previous sticky message: ", err)
+		}
+		// send a new message to the bottom
+		messsage, err := s.ChannelMessageSend(m.ChannelID, "Here is a nice little sticky message.")
+
+		// if message wasn't sent due to some reason
+		if err != nil {
+			fmt.Println("Erorr in sending sticky message: ", err)
+		}
+
+		// store the id of the new message sent in the persistent variable
+		persistentMessageID = messsage.ID
+
+		// write persistentMessageID string to file
+		err = os.WriteFile("lastTextSentDetails.txt", []byte(persistentMessageID), 0644)
+		if err != nil {
+			fmt.Println("Error writing to file: ", err)
+		}
+
 	}
+
 }
