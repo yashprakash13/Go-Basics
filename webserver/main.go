@@ -2,11 +2,11 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -29,8 +29,6 @@ type singleCryptoPrice struct {
 	Currency    string  `json:"asset_id_quote"`
 	MarketPrice float32 `json:"rate"`
 }
-
-var sliceOfResponses []singleCryptoPrice
 
 func init() {
 	err := godotenv.Load()
@@ -82,6 +80,7 @@ func main() {
 
 	http.HandleFunc("/allprices/", func(w http.ResponseWriter, r *http.Request) {
 		begin := time.Now()
+		var sliceOfResponses []singleCryptoPrice
 		listOfCrypto := [4]string{"BTC", "ETH", "DOGE", "SOL"}
 		for _, crypto := range listOfCrypto {
 			data, err := querySinglePrice(crypto)
@@ -90,9 +89,37 @@ func main() {
 				return
 			}
 			sliceOfResponses = append(sliceOfResponses, data)
-			fmt.Println(sliceOfResponses)
 		}
 
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"response": sliceOfResponses,
+			"took":     time.Since(begin).String(),
+		})
+	})
+
+	http.HandleFunc("/allprices-concurrent/", func(w http.ResponseWriter, r *http.Request) {
+		begin := time.Now()
+		listOfCrypto := [4]string{"BTC", "ETH", "DOGE", "SOL"}
+		var responses sync.Map
+		wg := sync.WaitGroup{}
+		for idx, crypto := range listOfCrypto {
+			wg.Add(1)
+			go func(crypto string, idx int) {
+				data, err := querySinglePrice(crypto)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				responses.Store(idx, data)
+				wg.Done()
+			}(crypto, idx)
+		}
+		wg.Wait()
+		var sliceOfResponses []singleCryptoPrice
+		for i := 0; i < 4; i++ {
+			data, _ := responses.Load(i)
+			sliceOfResponses = append(sliceOfResponses, data.(singleCryptoPrice))
+		}
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"response": sliceOfResponses,
 			"took":     time.Since(begin).String(),
