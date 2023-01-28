@@ -1,2 +1,5 @@
 # Go Basics
-Basics of Golang. Will keep updating with new concepts as I learn them. 
+
+Algorithms, concepts, libraries, and gotchas in Golang.
+
+This repository keeps updating as I learn new things.
